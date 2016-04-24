@@ -24,7 +24,8 @@ module Borg.Data
 
 import Control.Lens (Lens')
 import qualified Data.Text as T
-import qualified Shelly as S (FilePath)
+import qualified Data.Aeson as J (FromJSON, parseJSON, withObject)
+import Data.Aeson ((.:), (.:?))
 
 data Archive = Archive
   { _repositoryLoc           :: T.Text
@@ -71,6 +72,15 @@ retentionIntervalLimit :: Lens' Archive (Maybe ())
 retentionIntervalLimit f t =
   (\p' -> t {_retentionIntervalLimit = p'}) <$> f (_retentionIntervalLimit t)
 
+instance J.FromJSON Archive where
+  parseJSON = J.withObject "Archive" $ \o ->
+    Archive <$> o .: "repositoryLoc"
+            <*> o .: "compressionMethod"
+            <*> o .: "archivePrefix"
+            <*> o .: "filePaths"
+            <*> o .: "fileExcludes"
+            <*> o .:? "retentionIntervalLimit"
+
 data Configuration = Configuration
   { _activeKeywords      :: [T.Text]
       -- ^ List of keywords to search for such that if they exist, the
@@ -78,7 +88,7 @@ data Configuration = Configuration
   , _unmeteredConnNames  :: [T.Text]
       -- ^ List of fragments of unmetered connection names to match against, in
       -- lower case. Match is not case sensitive.
-  , _borgBinPath :: S.FilePath
+  , _borgBinPath         :: T.Text
       -- ^ Full path of borg executable.
   , _archiveManifest     :: [Archive]
       -- ^ List of archives to perform backup.
@@ -92,10 +102,17 @@ unmeteredConnNames :: Lens' Configuration [T.Text]
 unmeteredConnNames f t =
   (\p' -> t {_unmeteredConnNames = p'}) <$> f (_unmeteredConnNames t)
 
-borgBinPath :: Lens' Configuration S.FilePath
+borgBinPath :: Lens' Configuration T.Text
 borgBinPath f t =
   (\p' -> t {_borgBinPath = p'}) <$> f (_borgBinPath t)
 
 archiveManifest :: Lens' Configuration [Archive]
 archiveManifest f t =
   (\p' -> t {_archiveManifest = p'}) <$> f (_archiveManifest t)
+
+instance J.FromJSON Configuration where
+  parseJSON = J.withObject "Configuration" $ \o ->
+    Configuration <$> o .: "activeKeywords"
+                  <*> o .: "unmeteredConnNames"
+                  <*> o .: "borgBinPath"
+                  <*> o .: "archiveManifest"

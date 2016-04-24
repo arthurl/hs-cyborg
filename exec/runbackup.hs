@@ -2,11 +2,11 @@
 
 module Main where
 
-import Borg.Data
 import Borg
 
-configRemote :: Configuration
-configRemote = undefined
+import Data.Maybe (fromJust)
+import qualified Data.Aeson as J
+import qualified Data.ByteString.Lazy as B
 
 main :: IO ()
-main = checkConnectionThenBackup configRemote
+main = fromJust . J.decode <$> B.readFile "config.json" >>= checkConnectionThenBackup

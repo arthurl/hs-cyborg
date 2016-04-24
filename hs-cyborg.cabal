@@ -46,6 +46,8 @@ executable runbackup
   build-depends:       base >= 4.8 && < 4.9
                      , hs-cyborg
                      , text
+                     , bytestring
+                     , aeson
   hs-source-dirs:      exec
   default-extensions:  OverloadedStrings
   ghc-options:         -Wall
