@@ -12,7 +12,7 @@ import Borg.Connection
 
 import Control.Lens ((^.))
 import Control.Monad (unless)
-import Control.Monad.Writer.Strict (tell, execWriter)
+import Control.Monad.Writer.Strict (tell, listen, execWriter)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
 import Shelly (shelly, verbosely, run_, fromText)
@@ -37,11 +37,36 @@ generateArchiveCreateFlags axiv ztime = execWriter $ do
        ]
   tell . map T.pack $ axiv^.filePaths
 
+-- Returns an empty list to indicate no pruning.
+generateArchivePruneFlags :: Archive -> [T.Text]
+generateArchivePruneFlags axiv = execWriter $ do
+  (_, currentFlags) <- listen $ do
+    unless (axiv^.keepAllWithin == mempty) $
+      tell ["--keep-within=" <> axiv^.keepAllWithin]
+    unless (axiv^.nKeepAtInterval.hour == 0) $
+      tell ["-H=" <> T.pack (show $ axiv^.nKeepAtInterval.hour)]
+    unless (axiv^.nKeepAtInterval.day == 0) $
+      tell ["-d=" <> T.pack (show $ axiv^.nKeepAtInterval.day)]
+    unless (axiv^.nKeepAtInterval.week == 0) $
+      tell ["-w=" <> T.pack (show $ axiv^.nKeepAtInterval.week)]
+    unless (axiv^.nKeepAtInterval.month == 0) $
+      tell ["-m=" <> T.pack (show $ axiv^.nKeepAtInterval.month)]
+    unless (axiv^.nKeepAtInterval.year == 0) $
+      tell ["-y=" <> T.pack (show $ axiv^.nKeepAtInterval.year)]
+  unless (currentFlags == []) $
+    tell [ "-P=" <> axiv^.archivePrefix <> "-"
+         , axiv^.repositoryLoc
+         ]
+
 runManifest :: T.Text -> Archive -> IO ()
 runManifest borgPath axiv = do
   ztime <- TIME.getZonedTime
   shelly . verbosely . run_ (fromText borgPath) $
     ["create", "-nsp"] ++ generateArchiveCreateFlags axiv ztime
+  case generateArchivePruneFlags axiv of
+    [] -> pure ()
+    fs -> shelly . verbosely . run_ (fromText borgPath) $
+            ["prune", "-ns", "--list"] ++ fs
 
 checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
