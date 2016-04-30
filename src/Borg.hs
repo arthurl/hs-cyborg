@@ -62,7 +62,7 @@ runManifest :: T.Text -> Archive -> IO ()
 runManifest borgPath axiv = do
   ztime <- TIME.getZonedTime
   shelly . verbosely . run_ (fromText borgPath) $
-    ["create", "-nsp"] ++ generateArchiveCreateFlags axiv ztime
+    ["create", "-ns"] ++ generateArchiveCreateFlags axiv ztime
   case generateArchivePruneFlags axiv of
     [] -> pure ()
     fs -> shelly . verbosely . run_ (fromText borgPath) $
