@@ -11,10 +11,9 @@ import Borg.Data
 import Borg.Connection
 
 import Control.Lens ((^.))
-import GHC.Exts (fromString)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
-import Shelly (shelly, verbosely, run_)
+import Shelly (shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
 
 generateArchiveFlags :: Archive -> TIME.ZonedTime -> [T.Text]
@@ -33,12 +32,10 @@ generateArchiveFlags axiv ztime =
       filePathsArg = map T.pack $ axiv^.filePaths
   in compressionFlag : excludeFlags ++ repoArchiveName : filePathsArg
 
--- Note 2: Ugly `fromString` used because somehow Shelly's @filepath@ isn't the
--- same as Prelude's.
 backupArchive :: T.Text -> Archive -> IO ()
 backupArchive borgPath axiv = do
   ztime <- TIME.getZonedTime
-  shelly . verbosely . run_ (fromString . T.unpack $ borgPath) $
+  shelly . verbosely . run_ (fromText borgPath) $
     ["create", "-nsp"] ++ generateArchiveFlags axiv ztime
 
 runBackup :: Configuration -> IO ()
