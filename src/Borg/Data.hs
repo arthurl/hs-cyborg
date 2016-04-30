@@ -3,10 +3,18 @@
 module Borg.Data
   (
   -- * Data structures
-    Archive(..)
+    Interval(..)
+  , Archive(..)
   , Configuration(..)
 
   -- * Lenses and Prisms
+  -- ** Interval
+  , hour
+  , day
+  , week
+  , month
+  , year
+
   -- ** Archive
   , repositoryLoc
   , chunkerParams
@@ -14,7 +22,8 @@ module Borg.Data
   , archivePrefix
   , filePaths
   , fileExcludes
-  , retentionIntervalLimit
+  , keepAllWithin
+  , nKeepAtInterval
 
   -- ** Configuration
   , activeKeywords
@@ -27,6 +36,42 @@ import Control.Lens (Lens')
 import qualified Data.Text as T
 import qualified Data.Aeson as J (FromJSON, parseJSON, withObject)
 import Data.Aeson ((.:), (.:?), (.!=))
+
+data Interval = Interval
+  { _hour  :: Int
+  , _day   :: Int
+  , _week  :: Int
+  , _month :: Int
+  , _year  :: Int
+  } deriving (Show)
+
+hour :: Lens' Interval Int
+hour f t =
+  (\p' -> t {_hour = p'}) <$> f (_hour t)
+
+day :: Lens' Interval Int
+day f t =
+  (\p' -> t {_day = p'}) <$> f (_day t)
+
+week :: Lens' Interval Int
+week f t =
+  (\p' -> t {_week = p'}) <$> f (_week t)
+
+month :: Lens' Interval Int
+month f t =
+  (\p' -> t {_month = p'}) <$> f (_month t)
+
+year :: Lens' Interval Int
+year f t =
+  (\p' -> t {_year = p'}) <$> f (_year t)
+
+instance J.FromJSON Interval where
+  parseJSON = J.withObject "Interval" $ \o ->
+    Interval <$> o .:? "hourly" .!= 0
+             <*> o .:? "daily" .!= 0
+             <*> o .:? "weekly" .!= 0
+             <*> o .:? "monthly" .!= 0
+             <*> o .:? "yearly" .!= 0
 
 data Archive = Archive
   { _repositoryLoc           :: T.Text
@@ -48,7 +93,10 @@ data Archive = Archive
       -- ^ List of files to archive.
   , _fileExcludes            :: [T.Text]
       -- ^ List of file globs to exclude.
-  , _retentionIntervalLimit  :: Maybe ()
+  , _keepAllWithin           :: T.Text
+      -- ^ Archives will never be pruned before this time.
+  , _nKeepAtInterval         :: Interval
+      -- ^ Number of archives to keep for the given time intervals.
   } deriving (Show)
 
 repositoryLoc :: Lens' Archive T.Text
@@ -75,19 +123,32 @@ fileExcludes :: Lens' Archive [T.Text]
 fileExcludes f t =
   (\p' -> t {_fileExcludes = p'}) <$> f (_fileExcludes t)
 
-retentionIntervalLimit :: Lens' Archive (Maybe ())
-retentionIntervalLimit f t =
-  (\p' -> t {_retentionIntervalLimit = p'}) <$> f (_retentionIntervalLimit t)
+keepAllWithin :: Lens' Archive T.Text
+keepAllWithin f t =
+  (\p' -> t {_keepAllWithin = p'}) <$> f (_keepAllWithin t)
+
+nKeepAtInterval :: Lens' Archive Interval
+nKeepAtInterval f t =
+  (\p' -> t {_nKeepAtInterval = p'}) <$> f (_nKeepAtInterval t)
 
 instance J.FromJSON Archive where
-  parseJSON = J.withObject "Archive" $ \o ->
+  parseJSON = J.withObject "Archive" $ \o -> do
+    pruneObj <- o .:? "pruningConfig" .!= mempty
     Archive <$> o .: "repositoryLoc"
             <*> o .:? "chunkerParams"
             <*> o .:? "compressionMethod" .!= ""
             <*> o .: "archivePrefix"
             <*> o .: "filePaths"
             <*> o .:? "fileExcludes" .!= []
-            <*> o .:? "retentionIntervalLimit"
+            <*> do mKeepTime <- pruneObj .:? "keepAllWithin"
+                   case mKeepTime of
+                     Nothing -> pure ""
+                     Just keepTime ->
+                       if keepTime == "" ||
+                          T.last keepTime `elem` ['H','d','w','m','y']
+                       then pure keepTime
+                       else fail ("Unknown time interval: " ++ T.unpack keepTime)
+            <*> pruneObj .:? "keepIntervals" .!= Interval 0 0 0 0 0
 
 data Configuration = Configuration
   { _activeKeywords      :: [T.Text]

@@ -16,6 +16,15 @@
                       , "'*~'", "'#*#'", "'.#*'"
                       , "'*.lyx~'", "'*.lyx#'"
                       ]
+    , "pruningConfig":
+      { "keepAllWithin": "1m"
+      , "keepIntervals": { "hourly": 1
+                         , "daily": 1
+                         , "weekly": 1
+                         , "monthly": 1
+                         , "yearly": -1
+                         }
+      }
     }
   ]
 }
