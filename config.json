@@ -1,0 +1,21 @@
+{ "activeKeywords": ["inet ", "inet6 "]
+, "unmeteredConnNames": ["wi-fi", "thunderbolt", "ethernet"]
+, "borgBinPath": "/full/path/to/borg"
+, "archiveManifest":
+  [ { "repositoryLoc": "/full/path/to/repository"
+    , "chunkerParams": [19,23,21,4095]
+    , "compressionMethod": "lzma,7"
+    , "archivePrefix": "yourPrefix"
+    , "filePaths": [ "/full/path/of/directory/1"
+                   , "/full/path/of/directory/1"
+                   ]
+    , "fileExcludes": [ "'*/.DS_Store'", "'.AppleDouble'", "'.LSOverride'"
+                      , "'*.pyc'"
+                      , "'*/.cabal-sandbox'", "'*/dist'", "'*.o'", "'*.hi'"
+                      , "'*/.vagrant'"
+                      , "'*~'", "'#*#'", "'.#*'"
+                      , "'*.lyx~'", "'*.lyx#'"
+                      ]
+    }
+  ]
+}
