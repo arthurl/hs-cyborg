@@ -18,8 +18,8 @@ import Data.Monoid ((<>))
 import Shelly (shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
 
-generateArchiveFlags :: Archive -> TIME.ZonedTime -> [T.Text]
-generateArchiveFlags axiv ztime = execWriter $ do
+generateArchiveCreateFlags :: Archive -> TIME.ZonedTime -> [T.Text]
+generateArchiveCreateFlags axiv ztime = execWriter $ do
   unless (axiv^.compressionMethod == mempty) $
     tell ["-C=" <> axiv^.compressionMethod]
   unless (axiv^.fileExcludes == mempty) $
@@ -37,20 +37,16 @@ generateArchiveFlags axiv ztime = execWriter $ do
        ]
   tell . map T.pack $ axiv^.filePaths
 
-backupArchive :: T.Text -> Archive -> IO ()
-backupArchive borgPath axiv = do
+runManifest :: T.Text -> Archive -> IO ()
+runManifest borgPath axiv = do
   ztime <- TIME.getZonedTime
   shelly . verbosely . run_ (fromText borgPath) $
-    ["create", "-nsp"] ++ generateArchiveFlags axiv ztime
-
-runBackup :: Configuration -> IO ()
-runBackup config =
-  mapM_ (backupArchive (config^.borgBinPath)) (config^.archiveManifest)
+    ["create", "-nsp"] ++ generateArchiveCreateFlags axiv ztime
 
 checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
   isUnmetered <- shelly $ isUnmeteredConn
                    (config^.activeKeywords) (config^.unmeteredConnNames)
   if isUnmetered
-    then runBackup config
+    then mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
     else error "Not on white-listed connection. Backup terminated."
