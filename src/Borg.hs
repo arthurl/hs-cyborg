@@ -11,26 +11,31 @@ import Borg.Data
 import Borg.Connection
 
 import Control.Lens ((^.))
+import Control.Monad (unless)
+import Control.Monad.Writer.Strict (tell, execWriter)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
 import Shelly (shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
 
 generateArchiveFlags :: Archive -> TIME.ZonedTime -> [T.Text]
-generateArchiveFlags axiv ztime =
-  let compressionFlag :: T.Text
-      compressionFlag = "-C=" <> axiv^.compressionMethod
-      excludeFlags :: [T.Text]
-      excludeFlags = map ("-e=" <>) $ axiv^.fileExcludes
-      formattedTime :: String
+generateArchiveFlags axiv ztime = execWriter $ do
+  unless (axiv^.compressionMethod == mempty) $
+    tell ["-C=" <> axiv^.compressionMethod]
+  unless (axiv^.fileExcludes == mempty) $
+    tell $ map ("-e=" <>) $ axiv^.fileExcludes
+  case axiv^.chunkerParams of
+    Nothing -> pure ()
+    Just (c1,c2,c3,c4) -> tell [ "--chunker-params="
+                               <> T.pack (show c1) <> T.pack (',' : show c2)
+                               <> T.pack (',' : show c3) <> T.pack (',' : show c4)
+                               ]
+  let formattedTime :: String
       formattedTime = TIME.formatTime TIME.defaultTimeLocale "%Y-%m-%d-%H%Mh-%Z" ztime
-      repoArchiveName :: T.Text
-      repoArchiveName = axiv^.repositoryLoc <> "::"
-                        <> axiv^.archivePrefix <> "-"
-                        <> T.pack formattedTime
-      filePathsArg :: [T.Text]
-      filePathsArg = map T.pack $ axiv^.filePaths
-  in compressionFlag : excludeFlags ++ repoArchiveName : filePathsArg
+  tell [ axiv^.repositoryLoc <> "::"
+       <> axiv^.archivePrefix <> "-" <> T.pack formattedTime
+       ]
+  tell . map T.pack $ axiv^.filePaths
 
 backupArchive :: T.Text -> Archive -> IO ()
 backupArchive borgPath axiv = do

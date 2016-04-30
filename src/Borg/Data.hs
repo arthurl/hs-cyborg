@@ -9,6 +9,7 @@ module Borg.Data
   -- * Lenses and Prisms
   -- ** Archive
   , repositoryLoc
+  , chunkerParams
   , compressionMethod
   , archivePrefix
   , filePaths
@@ -25,11 +26,13 @@ module Borg.Data
 import Control.Lens (Lens')
 import qualified Data.Text as T
 import qualified Data.Aeson as J (FromJSON, parseJSON, withObject)
-import Data.Aeson ((.:), (.:?))
+import Data.Aeson ((.:), (.:?), (.!=))
 
 data Archive = Archive
   { _repositoryLoc           :: T.Text
       -- ^ Loc
+  , _chunkerParams           :: Maybe (Int, Int, Int, Int)
+      -- ^ Chunking parameters. See borg documentation for usage.
   , _compressionMethod       :: T.Text
       -- ^ Select compression algorithm and level. If using borg, from borg
       -- docs:
@@ -56,6 +59,10 @@ compressionMethod :: Lens' Archive T.Text
 compressionMethod f t =
   (\p' -> t {_compressionMethod = p'}) <$> f (_compressionMethod t)
 
+chunkerParams :: Lens' Archive (Maybe (Int, Int, Int, Int))
+chunkerParams f t =
+  (\p' -> t {_chunkerParams = p'}) <$> f (_chunkerParams t)
+
 archivePrefix :: Lens' Archive T.Text
 archivePrefix f t =
   (\p' -> t {_archivePrefix = p'}) <$> f (_archivePrefix t)
@@ -75,10 +82,11 @@ retentionIntervalLimit f t =
 instance J.FromJSON Archive where
   parseJSON = J.withObject "Archive" $ \o ->
     Archive <$> o .: "repositoryLoc"
-            <*> o .: "compressionMethod"
+            <*> o .:? "chunkerParams"
+            <*> o .:? "compressionMethod" .!= ""
             <*> o .: "archivePrefix"
             <*> o .: "filePaths"
-            <*> o .: "fileExcludes"
+            <*> o .:? "fileExcludes" .!= []
             <*> o .:? "retentionIntervalLimit"
 
 data Configuration = Configuration
