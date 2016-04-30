@@ -13,7 +13,6 @@ import Borg.Connection
 import Control.Lens ((^.))
 import GHC.Exts (fromString)
 import qualified Data.Text as T
-import Control.Monad (when)
 import Data.Monoid ((<>))
 import Shelly (shelly, verbosely, run_, escaping)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
@@ -53,4 +52,6 @@ checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
   isUnmetered <- shelly $ isUnmeteredConn
                    (config^.activeKeywords) (config^.unmeteredConnNames)
-  when isUnmetered $ runBackup config
+  if isUnmetered
+    then runBackup config
+    else error "Not on white-listed connection. Backup terminated."
