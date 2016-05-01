@@ -5,18 +5,26 @@ module Borg
   -- * Borg backup
     checkConnectionThenBackup
 
+  -- * Error messages
+  , msgErrNoValidConnection
+
   ) where
 
 import Borg.Data
 import Borg.Connection
+import Borg.Utils
 
 import Control.Lens ((^.))
-import Control.Monad (unless)
+import Control.Monad (when, unless)
 import Control.Monad.Writer.Strict (tell, listen, execWriter)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
 import Shelly (shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
+
+msgErrNoValidConnection :: T.Text
+msgErrNoValidConnection =
+  "ERROR: Not on white-listed connection. Backup terminated."
 
 generateArchiveCreateFlags :: Archive -> TIME.ZonedTime -> [T.Text]
 generateArchiveCreateFlags axiv ztime = execWriter $ do
@@ -74,4 +82,7 @@ checkConnectionThenBackup config = do
                    (config^.activeKeywords) (config^.unmeteredConnNames)
   if isUnmetered
     then mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
-    else error "Not on white-listed connection. Backup terminated."
+    else do
+      when (config^.osxNotifications) . shelly $
+        notifyOSX "hs-cyborg" msgErrNoValidConnection
+      error $ T.unpack msgErrNoValidConnection
