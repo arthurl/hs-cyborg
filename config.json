@@ -10,12 +10,12 @@
     , "filePaths": [ "/full/path/of/directory/1"
                    , "/full/path/of/directory/1"
                    ]
-    , "fileExcludes": [ "'*/.DS_Store'", "'*/.AppleDouble'", "'*/.LSOverride'"
-                      , "'*/.venv'", "'*.pyc'"
-                      , "'*/.cabal-sandbox'", "'*/dist'", "'*.o'", "'*.hi'"
-                      , "'*/.vagrant'"
-                      , "'*~'", "'*/#*#'", "'*/.#*'"
-                      , "'*.lyx~'", "'*.lyx#'"
+    , "fileExcludes": [ "re:/\\.DS_Store$", "re:/\\.AppleDouble$", "re:/\\.LSOverride$"
+                      , "re:/\\.venv$", "re:\\.pyc$"
+                      , "re:/\\.cabal-sandbox$", "re:/dist$", "re:\\.o$", "re:\\.hi$"
+                      , "re:/\\.vagrant$"
+                      , "re:~$", "re:/#[^/]*#$", "re:/\\.#[^/]*$"
+                      , "re:\\.lyx~$", "re:\\.lyx#$"
                       ]
     , "pruningConfig":
       { "keepAllWithin": "1m"
