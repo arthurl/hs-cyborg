@@ -6,20 +6,12 @@ module Borg.Connection
     isUnmeteredConn
   ) where
 
+import Borg.Utils
+
 import qualified Data.Text as T
 import Data.Maybe (mapMaybe)
 import Safe (headMay, atMay)
 import Shelly.Lifted (Sh, MonadSh(..), run, silently)
-
--- | A version of 'any' lifted to a monad. Retains the short-circuiting behaviour.
---
--- > anyM Just [False,True ,undefined] == Just True
--- > anyM Just [False,False,undefined] == undefined
-anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
-anyM _ [] = pure False
-anyM p (x:xs) = do
-  t <- p x
-  if t then pure True else anyM p xs
 
 -- | Returns a list of tuples (hardware port, device). Hardware port is in lower
 -- case.
