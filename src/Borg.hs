@@ -20,6 +20,7 @@ import Control.Monad (when, unless)
 import Control.Monad.Writer.Strict (tell, listen, execWriter)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
+import Control.Exception (SomeException, throwIO, catch)
 import Shelly (shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
 
@@ -90,6 +91,8 @@ checkConnectionThenBackup config = do
   if isUnmetered
     then do
       mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
+        `catch` \e -> notifyIfSet ("ERROR: " <> T.pack (show e))
+                      >> throwIO (e :: SomeException)
       notifyIfSet msgSuccessBackupComplete
     else do
       notifyIfSet msgErrNoValidConnection
