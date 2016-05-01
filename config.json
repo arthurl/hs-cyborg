@@ -9,11 +9,11 @@
     , "filePaths": [ "/full/path/of/directory/1"
                    , "/full/path/of/directory/1"
                    ]
-    , "fileExcludes": [ "'*/.DS_Store'", "'.AppleDouble'", "'.LSOverride'"
-                      , "'*.pyc'"
+    , "fileExcludes": [ "'*/.DS_Store'", "'*/.AppleDouble'", "'*/.LSOverride'"
+                      , "'*/.venv'", "'*.pyc'"
                       , "'*/.cabal-sandbox'", "'*/dist'", "'*.o'", "'*.hi'"
                       , "'*/.vagrant'"
-                      , "'*~'", "'#*#'", "'.#*'"
+                      , "'*~'", "'*/#*#'", "'*/.#*'"
                       , "'*.lyx~'", "'*.lyx#'"
                       ]
     , "pruningConfig":
