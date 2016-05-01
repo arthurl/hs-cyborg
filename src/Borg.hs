@@ -72,15 +72,21 @@ generateArchivePruneFlags axiv = execWriter $ do
          , axiv^.repositoryLoc
          ]
 
-runManifest :: T.Text -> Archive -> IO ()
-runManifest borgPath axiv = do
+runManifest :: Verbosity -> T.Text -> Archive -> IO ()
+runManifest (Verbosity vb) borgPath axiv = do
   ztime <- TIME.getZonedTime
-  shelly . verbosely . run_ (fromText borgPath) $
-    ["create", "--info", "-s", "--list", "--filter=AME"] ++ generateArchiveCreateFlags axiv ztime
-  case generateArchivePruneFlags axiv of
-    [] -> pure ()
-    fs -> shelly . verbosely . run_ (fromText borgPath) $
-            ["prune", "--info", "-s", "--list"] ++ fs
+  if vb then
+    shelly . verbosely . run_ (fromText borgPath) $
+      ["create", "--info", "-s", "--list", "--filter=AME"] ++ generateArchiveCreateFlags axiv ztime
+  else
+    shelly . run_ (fromText borgPath) $
+      ["create"] ++ generateArchiveCreateFlags axiv ztime
+  case (generateArchivePruneFlags axiv, vb) of
+    ([], _) -> pure ()
+    (fs, True) -> shelly . verbosely . run_ (fromText borgPath) $
+                    ["prune", "--info", "-s", "--list"] ++ fs
+    (fs, False) -> shelly . run_ (fromText borgPath) $
+                     ["prune"] ++ fs
 
 checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
@@ -90,7 +96,8 @@ checkConnectionThenBackup config = do
         when (config^.osxNotifications) . shelly $ notifyOSX "hs-cyborg" msg
   if isUnmetered
     then do
-      mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
+      mapM_ (runManifest (config^.setVerbosity) (config^.borgBinPath))
+            (config^.archiveManifest)
         `catch` \e -> notifyIfSet ("ERROR: " <> T.pack (show e))
                       >> throwIO (e :: SomeException)
       notifyIfSet msgSuccessBackupComplete

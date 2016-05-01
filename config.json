@@ -1,6 +1,7 @@
 { "activeKeywords": ["inet ", "inet6 "]
 , "unmeteredConnNames": ["wi-fi", "thunderbolt", "ethernet"]
 , "osxNotifications": true
+, "stdoutVerbosity": false
 , "borgBinPath": "/full/path/to/borg"
 , "archiveManifest":
   [ { "repositoryLoc": "/full/path/to/repository"

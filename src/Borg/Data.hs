@@ -5,6 +5,7 @@ module Borg.Data
   -- * Data structures
     Interval(..)
   , Archive(..)
+  , Verbosity(..)
   , Configuration(..)
 
   -- * Lenses and Prisms
@@ -25,17 +26,21 @@ module Borg.Data
   , keepAllWithin
   , nKeepAtInterval
 
+  -- ** Verbosity
+  , iVbBool
+
   -- ** Configuration
   , activeKeywords
   , unmeteredConnNames
   , osxNotifications
+  , setVerbosity
   , borgBinPath
   , archiveManifest
   ) where
 
-import Control.Lens (Lens')
+import Control.Lens (Lens', Iso', iso)
 import qualified Data.Text as T
-import qualified Data.Aeson as J (FromJSON, parseJSON, withObject)
+import qualified Data.Aeson as J (FromJSON, parseJSON, withObject, withBool)
 import Data.Aeson ((.:), (.:?), (.!=))
 
 data Interval = Interval
@@ -151,6 +156,18 @@ instance J.FromJSON Archive where
                        else fail ("Unknown time interval: " ++ T.unpack keepTime)
             <*> pruneObj .:? "keepIntervals" .!= Interval 0 0 0 0 0
 
+newtype Verbosity = Verbosity
+  { _stdoutVerbosity     :: Bool
+      -- ^ If 'False', suppress output to stdout.
+  }
+
+iVbBool :: Iso' Verbosity Bool
+iVbBool = iso _stdoutVerbosity Verbosity
+
+instance J.FromJSON Verbosity where
+  parseJSON = J.withBool "Verbosity" $
+    pure . Verbosity
+
 data Configuration = Configuration
   { _activeKeywords      :: [T.Text]
       -- ^ List of keywords to search for such that if they exist, the
@@ -160,6 +177,8 @@ data Configuration = Configuration
       -- lower case. Match is not case sensitive.
   , _osxNotifications    :: Bool
       -- ^ If true, display notifications in notification center. OS X only.
+  , _setVerbosity        :: Verbosity
+      -- ^ Controls whether to print to stdout.
   , _borgBinPath         :: T.Text
       -- ^ Full path of borg executable.
   , _archiveManifest     :: [Archive]
@@ -178,6 +197,10 @@ osxNotifications :: Lens' Configuration Bool
 osxNotifications f t =
   (\p' -> t {_osxNotifications = p'}) <$> f (_osxNotifications t)
 
+setVerbosity :: Lens' Configuration Verbosity
+setVerbosity f t =
+  (\p' -> t {_setVerbosity = p'}) <$> f (_setVerbosity t)
+
 borgBinPath :: Lens' Configuration T.Text
 borgBinPath f t =
   (\p' -> t {_borgBinPath = p'}) <$> f (_borgBinPath t)
@@ -191,5 +214,6 @@ instance J.FromJSON Configuration where
     Configuration <$> o .: "activeKeywords"
                   <*> o .: "unmeteredConnNames"
                   <*> o .:? "osxNotifications" .!= False
+                  <*> o .:? "stdoutVerbosity" .!= Verbosity False
                   <*> o .: "borgBinPath"
                   <*> o .: "archiveManifest"
