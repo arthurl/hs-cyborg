@@ -7,6 +7,7 @@ module Borg
 
   -- * Error messages
   , msgErrNoValidConnection
+  , msgSuccessBackupComplete
 
   ) where
 
@@ -25,6 +26,10 @@ import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale
 msgErrNoValidConnection :: T.Text
 msgErrNoValidConnection =
   "ERROR: Not on white-listed connection. Backup terminated."
+
+msgSuccessBackupComplete :: T.Text
+msgSuccessBackupComplete =
+  "Backup completed."
 
 generateArchiveCreateFlags :: Archive -> TIME.ZonedTime -> [T.Text]
 generateArchiveCreateFlags axiv ztime = execWriter $ do
@@ -80,9 +85,12 @@ checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
   isUnmetered <- shelly $ isUnmeteredConn
                    (config^.activeKeywords) (config^.unmeteredConnNames)
+  let notifyIfSet msg =
+        when (config^.osxNotifications) . shelly $ notifyOSX "hs-cyborg" msg
   if isUnmetered
-    then mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
+    then do
+      mapM_ (runManifest (config^.borgBinPath)) (config^.archiveManifest)
+      notifyIfSet msgSuccessBackupComplete
     else do
-      when (config^.osxNotifications) . shelly $
-        notifyOSX "hs-cyborg" msgErrNoValidConnection
+      notifyIfSet msgErrNoValidConnection
       error $ T.unpack msgErrNoValidConnection
