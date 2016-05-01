@@ -28,6 +28,7 @@ module Borg.Data
   -- ** Configuration
   , activeKeywords
   , unmeteredConnNames
+  , osxNotifications
   , borgBinPath
   , archiveManifest
   ) where
@@ -157,6 +158,8 @@ data Configuration = Configuration
   , _unmeteredConnNames  :: [T.Text]
       -- ^ List of fragments of unmetered connection names to match against, in
       -- lower case. Match is not case sensitive.
+  , _osxNotifications    :: Bool
+      -- ^ If true, display notifications in notification center. OS X only.
   , _borgBinPath         :: T.Text
       -- ^ Full path of borg executable.
   , _archiveManifest     :: [Archive]
@@ -171,6 +174,10 @@ unmeteredConnNames :: Lens' Configuration [T.Text]
 unmeteredConnNames f t =
   (\p' -> t {_unmeteredConnNames = p'}) <$> f (_unmeteredConnNames t)
 
+osxNotifications :: Lens' Configuration Bool
+osxNotifications f t =
+  (\p' -> t {_osxNotifications = p'}) <$> f (_osxNotifications t)
+
 borgBinPath :: Lens' Configuration T.Text
 borgBinPath f t =
   (\p' -> t {_borgBinPath = p'}) <$> f (_borgBinPath t)
@@ -183,5 +190,6 @@ instance J.FromJSON Configuration where
   parseJSON = J.withObject "Configuration" $ \o ->
     Configuration <$> o .: "activeKeywords"
                   <*> o .: "unmeteredConnNames"
+                  <*> o .:? "osxNotifications" .!= False
                   <*> o .: "borgBinPath"
                   <*> o .: "archiveManifest"
