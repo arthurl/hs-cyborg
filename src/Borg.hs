@@ -76,11 +76,11 @@ runManifest :: T.Text -> Archive -> IO ()
 runManifest borgPath axiv = do
   ztime <- TIME.getZonedTime
   shelly . verbosely . run_ (fromText borgPath) $
-    ["create", "--info", "-ns"] ++ generateArchiveCreateFlags axiv ztime
+    ["create", "--info", "-s"] ++ generateArchiveCreateFlags axiv ztime
   case generateArchivePruneFlags axiv of
     [] -> pure ()
     fs -> shelly . verbosely . run_ (fromText borgPath) $
-            ["prune", "--info", "-ns", "--list"] ++ fs
+            ["prune", "--info", "-s", "--list"] ++ fs
 
 checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
