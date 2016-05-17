@@ -21,7 +21,7 @@ import Control.Monad.Writer.Strict (tell, listen, execWriter)
 import qualified Data.Text as T
 import Data.Monoid ((<>))
 import Control.Exception (SomeException, throwIO, catch)
-import Shelly (shelly, verbosely, run_, fromText)
+import Shelly (Sh, shelly, verbosely, run_, fromText)
 import qualified Data.Time as TIME (ZonedTime(..), formatTime, defaultTimeLocale, getZonedTime)
 
 msgErrNoValidConnection :: T.Text
@@ -88,6 +88,13 @@ runManifest (Verbosity vb) borgPath axiv = do
     (fs, False) -> shelly . run_ (fromText borgPath) $
                      ["prune"] ++ fs
 
+runPostBackupCmdS :: Verbosity -> [(T.Text, [T.Text])] -> IO ()
+runPostBackupCmdS (Verbosity vb) =
+  shelly . (if vb then verbosely else id) . mapM_ go
+  where
+    go :: (T.Text, [T.Text]) -> Sh ()
+    go (cmd', args') = run_ (fromText cmd') args'
+
 checkConnectionThenBackup :: Configuration -> IO ()
 checkConnectionThenBackup config = do
   isUnmetered <- shelly $ isUnmeteredConn
@@ -96,10 +103,12 @@ checkConnectionThenBackup config = do
         when (config^.osxNotifications) . shelly $ notifyOSX "hs-cyborg" msg
   if isUnmetered
     then do
-      mapM_ (runManifest (config^.setVerbosity) (config^.borgBinPath))
-            (config^.archiveManifest)
-        `catch` \e -> notifyIfSet ("ERROR: " <> T.pack (show e))
-                      >> throwIO (e :: SomeException)
+      ( do
+          mapM_ (runManifest (config^.setVerbosity) (config^.borgBinPath))
+                (config^.archiveManifest)
+          runPostBackupCmdS (config^.setVerbosity) (config^.postBackupCmdS)
+        ) `catch` \e -> notifyIfSet ("ERROR: " <> T.pack (show e))
+                        >> throwIO (e :: SomeException)
       notifyIfSet msgSuccessBackupComplete
     else do
       notifyIfSet msgErrNoValidConnection

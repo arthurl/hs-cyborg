@@ -36,12 +36,14 @@ module Borg.Data
   , setVerbosity
   , borgBinPath
   , archiveManifest
+  , postBackupCmdS
   ) where
 
 import Control.Lens (Lens', Iso', iso)
 import qualified Data.Text as T
 import qualified Data.Aeson as J (FromJSON, parseJSON, withObject, withBool)
 import Data.Aeson ((.:), (.:?), (.!=))
+import qualified Data.Vector as V (toList)
 
 data Interval = Interval
   { _hour  :: Int
@@ -183,6 +185,8 @@ data Configuration = Configuration
       -- ^ Full path of borg executable.
   , _archiveManifest     :: [Archive]
       -- ^ List of archives to perform backup.
+  , _postBackupCmdS      :: [(T.Text, [T.Text])]
+      -- ^ List of (Command, Args) to execute after backup is done.
   }
 
 activeKeywords :: Lens' Configuration [T.Text]
@@ -209,11 +213,20 @@ archiveManifest :: Lens' Configuration [Archive]
 archiveManifest f t =
   (\p' -> t {_archiveManifest = p'}) <$> f (_archiveManifest t)
 
+postBackupCmdS :: Lens' Configuration [(T.Text, [T.Text])]
+postBackupCmdS f t =
+  (\p' -> t {_postBackupCmdS = p'}) <$> f (_postBackupCmdS t)
+
 instance J.FromJSON Configuration where
-  parseJSON = J.withObject "Configuration" $ \o ->
+  parseJSON = J.withObject "Configuration" $ \o -> do
+    postBupObj <- o .:? "postBackupCommands" .!= mempty
     Configuration <$> o .: "activeKeywords"
                   <*> o .: "unmeteredConnNames"
                   <*> o .:? "osxNotifications" .!= False
                   <*> o .:? "stdoutVerbosity" .!= Verbosity False
                   <*> o .: "borgBinPath"
                   <*> o .: "archiveManifest"
+                  <*> (mapM (J.withObject "CommandArgsTuple" $ \c ->
+                              (,) <$> c .: "cmd"
+                                  <*> c .:? "args" .!= mempty
+                        ) (V.toList postBupObj))
