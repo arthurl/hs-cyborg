@@ -14,6 +14,7 @@
     , "fileExcludes": [ "re:/\\.DS_Store$", "re:/\\.AppleDouble$", "re:/\\.LSOverride$"
                       , "re:/\\.venv$", "re:\\.pyc$"
                       , "re:/\\.cabal-sandbox$", "re:/dist$", "re:\\.o$", "re:\\.hi$"
+                      , "re:/\\.class$", "re:/\\.jar$", "re:/\\.war$", "re:/\\.ear$", "re:/hs_err_pid"
                       , "re:/\\.vagrant$"
                       , "re:~$", "re:/#[^/]*#$", "re:/\\.#[^/]*$"
                       , "re:\\.lyx~$", "re:\\.lyx#$"
