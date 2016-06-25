@@ -9,6 +9,10 @@ module Borg
   , msgErrNoValidConnection
   , msgSuccessBackupComplete
 
+  -- * Backend utilities
+  , generateArchiveCreateFlags
+  , runManifest
+  , runPostBackupCmdS
   ) where
 
 import Borg.Data
@@ -18,7 +22,7 @@ import Borg.Utils
 import Control.Lens ((^.))
 import Control.Monad (when, unless)
 import Control.Monad.Writer.Strict (tell, listen, execWriter)
-import qualified Data.Text as T
+import qualified Data.Text as T (Text, pack, unpack)
 import Data.Monoid ((<>))
 import Control.Exception (SomeException, throwIO, catch)
 import Shelly (Sh, shelly, verbosely, run_, fromText)
@@ -31,6 +35,30 @@ msgErrNoValidConnection =
 msgSuccessBackupComplete :: T.Text
 msgSuccessBackupComplete =
   "Backup completed."
+
+-- generateArchiveFlags :: Archive -> TIME.ZonedTime -> [T.Text]
+-- generateArchiveFlags axiv ztime =
+--   let compressionFlag :: T.Text
+--       compressionFlag = case axiv^.compressionMethod of
+--         "" -> ""
+--         cf -> "-C=" <> cf
+--       excludeFlags :: [T.Text]
+--       excludeFlags = map ("-e=" <>) $ axiv^.fileExcludes
+--       chunkerParamsFlags :: T.Text
+--       chunkerParamsFlags = case axiv^.chunkerParams of
+--         Nothing -> ""
+--         Just (c1,c2,c3,c4) -> "--chunker-params="
+--                               <> T.pack (show c1) <> T.pack (',' : show c2)
+--                               <> T.pack (',' : show c3) <> T.pack (',' : show c4)
+--       formattedTime :: String
+--       formattedTime = TIME.formatTime TIME.defaultTimeLocale "%Y-%m-%d-%H%Mh-%Z" ztime
+--       repoArchiveName :: T.Text
+--       repoArchiveName = axiv^.repositoryLoc <> "::"
+--                         <> axiv^.archivePrefix <> "-"
+--                         <> T.pack formattedTime
+--       filePathsArg :: [T.Text]
+--       filePathsArg = map T.pack $ axiv^.filePaths
+--   in compressionFlag : excludeFlags ++ chunkerParamsFlags : repoArchiveName : filePathsArg
 
 generateRemotePathFlag :: Archive -> [T.Text]
 generateRemotePathFlag axiv =

@@ -9,7 +9,7 @@
     , "compressionMethod": "lzma,7"
     , "archivePrefix": "yourPrefix"
     , "filePaths": [ "/full/path/of/directory/1"
-                   , "/full/path/of/directory/1"
+                   , "/full/path/of/directory/2"
                    ]
     , "fileExcludes": [ "re:/\\.DS_Store$", "re:/\\.AppleDouble$", "re:/\\.LSOverride$"
                       , "re:/\\.venv$", "re:\\.pyc$"

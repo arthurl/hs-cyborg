@@ -4,7 +4,12 @@ cabal-version:         >=1.10
 build-type:            Simple
 author:                Arthur Lee
 maintainer:            me@arthur.li
+-- description:
+-- category:
 extra-source-files:    README.md
+-- tested-with:           GHC == 7.10.3
+-- data-files:
+-- data-dir:
 
 flag optimise
   description:
@@ -23,6 +28,7 @@ library
                      , Borg.Data
                      , Borg.Connection
                      , Borg.Utils
+  -- other-modules:
   build-depends:       base >= 4.8 && < 5
                      , lens
                      , mtl
@@ -34,6 +40,7 @@ library
                      , time
   hs-source-dirs:      src
   default-extensions:  OverloadedStrings
+  -- other-extensions:
   ghc-options:         -Wall
                        -funbox-strict-fields
   default-language:    Haskell2010
@@ -41,11 +48,15 @@ library
     ghc-options:       -fwarn-incomplete-uni-patterns
                        -fwarn-incomplete-record-updates
                        -fwarn-monomorphism-restriction
+                       -- -fwarn-auto-orphans
                        -fwarn-missing-local-sigs
+                       -- -fwarn-missing-exported-sigs -- GHC bug
+                       -- -fwarn-missing-import-lists
                        -fwarn-identities
 
 executable cyborg
   main-is:             cyborg.hs
+  -- other-modules:       Paths_module_name
   build-depends:       base >= 4.8 && < 5
                      , hs-cyborg
                      , text
@@ -57,3 +68,29 @@ executable cyborg
   default-language:    Haskell2010
   if flag(optimise)
     ghc-options:       -O2
+
+-- test-suite test-x
+--   type:                exitcode-stdio-1.0
+--   main-is:             Test.hs
+--   -- type:                detailed-0.9
+--   -- test-module:         Test
+--   build-depends:       base >= 4.8 && < 5
+--                      -- , Cabal >= 1.9.2
+--                      , tasty
+--                      , tasty-hunit
+--                      -- , HUnit
+--                      , tasty-quickcheck
+--                      , QuickCheck
+--   hs-source-dirs:      tests
+--   ghc-options:         -Wall
+--   default-language:    Haskell2010
+
+-- benchmark criterion
+--   type:                exitcode-stdio-1.0
+--   main-is:             Bench.hs
+--   build-depends:       base >= 4.8 && < 5
+--                      , criterion >= 1.1
+--   hs-source-dirs:      benchmarks
+--   ghc-options:         -Wall
+--                        -O2
+--   default-language:    Haskell2010

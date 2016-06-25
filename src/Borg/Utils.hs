@@ -27,3 +27,24 @@ notifyOSX title msg =
   run_ "osascript" $ [ "-e"
     , "display notification \"" <> msg <> "\" with title \"" <> title <> "\""
     ]
+
+{-
+retrySh :: (Monoid a) => Int -> Sh a -> Sh a
+retrySh 0 _ = mempty
+retrysh 1 ...
+retrySh n cmdSh = do
+  output <- errExit False cmdSh
+  exitCode <- lastExitCode
+  if exitCode == 0 then pure (pure output) else
+    retrySh (n-1) cmdSh
+-}
+
+{-
+-- | Type level privilege control.
+newtype Sudo a = Sudo { sudo :: Sh a }
+runSudo :: T.Text -> [T.Text] -> Sudo T.Text
+runSudo cmd' args' = Sudo $ run "/usr/bin/sudo" (cmd':args')
+
+run_ "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/\
+         \Current/Resources/airport" ["-I"]
+-}

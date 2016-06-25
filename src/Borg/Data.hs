@@ -41,7 +41,7 @@ module Borg.Data
   ) where
 
 import Control.Lens (Lens', Iso', iso)
-import qualified Data.Text as T
+import qualified Data.Text as T (Text, unpack, last)
 import qualified Data.Aeson as J (FromJSON, parseJSON, withObject, withBool)
 import Data.Aeson ((.:), (.:?), (.!=))
 import qualified Data.Vector as V (toList)
@@ -169,7 +169,7 @@ instance J.FromJSON Archive where
 newtype Verbosity = Verbosity
   { _stdoutVerbosity     :: Bool
       -- ^ If 'False', suppress output to stdout.
-  }
+  } deriving (Show)
 
 iVbBool :: Iso' Verbosity Bool
 iVbBool = iso _stdoutVerbosity Verbosity
@@ -195,7 +195,7 @@ data Configuration = Configuration
       -- ^ List of archives to perform backup.
   , _postBackupCmdS      :: [(T.Text, [T.Text])]
       -- ^ List of (Command, Args) to execute after backup is done.
-  }
+  } deriving (Show)
 
 activeKeywords :: Lens' Configuration [T.Text]
 activeKeywords f t =

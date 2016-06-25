@@ -4,6 +4,10 @@ module Borg.Connection
   (
   -- * Connection mode
     isUnmeteredConn
+
+  -- * Backend utilities
+  , getDeviceHardwarePorts
+  , isDeviceActive
   ) where
 
 import Borg.Utils
