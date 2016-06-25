@@ -44,14 +44,14 @@ library
                        -fwarn-missing-local-sigs
                        -fwarn-identities
 
-executable runbackup
-  main-is:             runbackup.hs
-  build-depends:       base >= 4.8 && < 4.9
+executable cyborg
+  main-is:             cyborg.hs
+  build-depends:       base >= 4.8 && < 5
                      , hs-cyborg
                      , text
                      , bytestring
                      , aeson
-  hs-source-dirs:      exec
+  hs-source-dirs:      app
   default-extensions:  OverloadedStrings
   ghc-options:         -Wall
   default-language:    Haskell2010
