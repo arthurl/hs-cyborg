@@ -32,6 +32,12 @@ msgSuccessBackupComplete :: T.Text
 msgSuccessBackupComplete =
   "Backup completed."
 
+generateRemotePathFlag :: Archive -> [T.Text]
+generateRemotePathFlag axiv =
+  case axiv^.remoteBorgPath of
+    Nothing -> mempty
+    Just path -> ["--remote-path=" <> path]
+
 generateArchiveCreateFlags :: Archive -> TIME.ZonedTime -> [T.Text]
 generateArchiveCreateFlags axiv ztime = execWriter $ do
   unless (axiv^.compressionMethod == mempty) $
@@ -77,16 +83,20 @@ runManifest (Verbosity vb) borgPath axiv = do
   ztime <- TIME.getZonedTime
   if vb then
     shelly . verbosely . run_ (fromText borgPath) $
-      ["create", "--info", "-s", "--list", "--filter=AME"] ++ generateArchiveCreateFlags axiv ztime
+      ["create", "--info", "-s", "--list", "--filter=AME"]
+      ++ generateRemotePathFlag axiv ++ generateArchiveCreateFlags axiv ztime
   else
     shelly . run_ (fromText borgPath) $
-      ["create"] ++ generateArchiveCreateFlags axiv ztime
+      ["create"]
+      ++ generateRemotePathFlag axiv ++ generateArchiveCreateFlags axiv ztime
   case (generateArchivePruneFlags axiv, vb) of
     ([], _) -> pure ()
     (fs, True) -> shelly . verbosely . run_ (fromText borgPath) $
-                    ["prune", "--info", "-s", "--list"] ++ fs
+                    ["prune", "--info", "-s", "--list"]
+                    ++ generateRemotePathFlag axiv ++ fs
     (fs, False) -> shelly . run_ (fromText borgPath) $
-                     ["prune"] ++ fs
+                     ["prune"]
+                     ++ generateRemotePathFlag axiv ++ fs
 
 runPostBackupCmdS :: Verbosity -> [(T.Text, [T.Text])] -> IO ()
 runPostBackupCmdS (Verbosity vb) =

@@ -18,6 +18,7 @@ module Borg.Data
 
   -- ** Archive
   , repositoryLoc
+  , remoteBorgPath
   , chunkerParams
   , compressionMethod
   , archivePrefix
@@ -84,6 +85,8 @@ instance J.FromJSON Interval where
 data Archive = Archive
   { _repositoryLoc           :: T.Text
       -- ^ Loc
+  , _remoteBorgPath          :: Maybe T.Text
+      -- ^ Location of borg executable on remote server, if applicable.
   , _chunkerParams           :: Maybe (Int, Int, Int, Int)
       -- ^ Chunking parameters. See borg documentation for usage.
   , _compressionMethod       :: T.Text
@@ -110,6 +113,10 @@ data Archive = Archive
 repositoryLoc :: Lens' Archive T.Text
 repositoryLoc f t =
   (\p' -> t {_repositoryLoc = p'}) <$> f (_repositoryLoc t)
+
+remoteBorgPath :: Lens' Archive (Maybe T.Text)
+remoteBorgPath f t =
+  (\p' -> t {_remoteBorgPath = p'}) <$> f (_remoteBorgPath t)
 
 compressionMethod :: Lens' Archive T.Text
 compressionMethod f t =
@@ -143,6 +150,7 @@ instance J.FromJSON Archive where
   parseJSON = J.withObject "Archive" $ \o -> do
     pruneObj <- o .:? "pruningConfig" .!= mempty
     Archive <$> o .: "repositoryLoc"
+            <*> o .:? "remoteBorgPath"
             <*> o .:? "chunkerParams"
             <*> o .:? "compressionMethod" .!= ""
             <*> o .: "archivePrefix"
